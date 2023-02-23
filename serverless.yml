@@ -1,0 +1,44 @@
+service: sqs-lambda-a-send-msg
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  region: us-east-1
+  environment:
+    REGION: ${self:provider.region}
+    QUEUE_URL_NAME: PendingTestQueue
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "sqs:SendMessage"
+      Resource:
+        - "arn:aws:sqs:${self:provider.region}:*:${self:provider.environment.QUEUE_URL_NAME}"
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-dotenv-plugin
+  - serverless-prune-plugin
+  - serverless-offline
+
+custom:
+  prune:
+    automatic: true
+    number: 1
+
+functions:
+  initializeRequest:
+    handler: src/handler.initializeRequest
+    events:
+      - http:
+          method: post
+          path: initializeRequest
+          cors: true
+
+resources:
+  Resources:
+    PendingTestQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: ${self:provider.environment.QUEUE_URL_NAME}
